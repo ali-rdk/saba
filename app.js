@@ -5,6 +5,7 @@ import cors from "cors";
 import { AuthRoutes } from "./routes/auth/index.mjs";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
+import { tableRoutes } from "./routes/index.mjs";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use(cookieParser());
 
 // Routing for API endpoints.
 app.use("/auth", AuthRoutes);
+app.use("/table", tableRoutes);
 
 app.listen(process.env.PORT, () =>
   console.log("app is running on port", process.env.PORT)
