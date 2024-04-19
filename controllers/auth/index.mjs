@@ -178,12 +178,12 @@ export const userLogin = async ({ body, cookies }, res) => {
   if (!user)
     return res
       .status(401)
-      .json({ error: "password and username are required" });
+      .json({ error: "وارد کردن کد ملی و رمز عبور اجباری است" });
 
   const comparePassword = await bcrypt.compare(body.password, user.password);
   if (!comparePassword)
-    return res.status(401).json({ error: "password or username is wrong" });
-  console.log(user);
+    return res.status(401).json({ error: "کد ملی یا رمز عبور اشتباه است" });
+
   const {
     refresh_token,
     password,
@@ -226,10 +226,10 @@ export const userLogin = async ({ body, cookies }, res) => {
       newRefreshTokenArray = user.refresh_token.filter(
         (token) => token !== cookies.refreshToken
       );
-    console.log(newRefreshTokenArray);
+    // console.log(newRefreshTokenArray);
   } else {
     newRefreshTokenArray = user.refres_token || [];
-    console.log(newRefreshTokenArray);
+    // console.log(newRefreshTokenArray);
   }
 
   res.clearCookie("refresh_token", {
@@ -249,7 +249,7 @@ export const userLogin = async ({ body, cookies }, res) => {
   });
   res
     .status(202)
-    .json({ massage: "signed in successfully", access_token: accessToken });
+    .json({ massage: "با موفقیت وارد شدید", access_token: accessToken });
 };
 
 export const userLogOut = async ({ cookies }, res) => {
