@@ -1,36 +1,6 @@
 import yup, { ref, string } from "yup";
 import { model, Schema } from "mongoose";
-
-const proviences = [
-  "Tehran",
-  "Isfahan",
-  "Mazandaran",
-  "Fars",
-  "Khorasan Razavi",
-  "East Azerbaijan",
-  "West Azerbaijan",
-  "Kerman",
-  "Khuzestan",
-  "Gilan",
-  "Qom",
-  "Kermanshah",
-  "Hormozgan",
-  "Sistan and Baluchestan",
-  "Markazi",
-  "Bushehr",
-  "Lorestan",
-  "Golestan",
-  "North Khorasan",
-  "Razavi Khorasan",
-  "Zanjan",
-  "Qazvin",
-  "Ilam",
-  "Kohgiluyeh and Boyer-Ahmad",
-  "South Khorasan",
-  "Chaharmahal and Bakhtiari",
-  "Semnan",
-  "Ardabil",
-];
+import { ROLES } from "./roles.mjs";
 
 export const userRegistrationSchema = yup.object({
   body: yup.object({
@@ -71,11 +41,17 @@ export const otpTokenSchema = yup.object({
   }),
 });
 
+export const loginSchema = yup.object({
+  body: yup.object({
+    nationalId: yup.string().max(10).min(8).required(),
+    password: yup.string().required(),
+  }),
+});
+
 const AddressSchema = new Schema({
   province: {
     type: String,
     required: true,
-    enum: proviences,
   },
   city: {
     type: String,
@@ -188,6 +164,11 @@ const UserSchema = new Schema({
   verified: {
     type: Boolean,
     default: false,
+  },
+  refresh_token: [String],
+  role: {
+    type: String,
+    enum: [ROLES.ADMIN, ROLES.PARTICIPANT],
   },
 });
 

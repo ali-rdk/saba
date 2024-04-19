@@ -5,7 +5,14 @@ import {
   sendSMS,
 } from "../../utils/index.mjs";
 import bcrypt from "bcrypt";
-import { User, Email, PhoneNumber, Address } from "../../models/index.mjs";
+import jwt, { decode } from "jsonwebtoken";
+import {
+  User,
+  Email,
+  PhoneNumber,
+  Address,
+  ROLES,
+} from "../../models/index.mjs";
 
 export const userRegister = async (req, res) => {
   const {
@@ -85,6 +92,7 @@ export const userRegister = async (req, res) => {
     email: userEmail.id,
     phone_number: phone.id,
     address: newAdress.id,
+    role: ROLES.PARTICIPANT,
     ...rest,
   });
   await user.save();
@@ -163,4 +171,169 @@ export const verifyCode = async (req, res) => {
   }
 
   return res.status(200).json({ massage: "شماره همراه با موفقیت تایید شد" });
+};
+
+export const userLogin = async ({ body, cookies }, res) => {
+  const user = await User.findOne({ national_id: body.nationalId });
+  if (!user)
+    return res
+      .status(401)
+      .json({ error: "password and username are required" });
+
+  const comparePassword = await bcrypt.compare(body.password, user.password);
+  if (!comparePassword)
+    return res.status(401).json({ error: "password or username is wrong" });
+  console.log(user);
+  const {
+    refresh_token,
+    password,
+    _id,
+    __v,
+    email,
+    phone_number,
+    address,
+    birth_date,
+    verified,
+    confession,
+    illness,
+    gender,
+    t_shirt,
+    university,
+    major,
+    degree,
+    first_name,
+    last_name,
+    ...restUser
+  } = user._doc;
+
+  const accessToken = jwt.sign({ ...restUser }, process.env.ACCESS_SECRET_KEY, {
+    expiresIn: "30m",
+  });
+  const newRefreshToken = jwt.sign(
+    { ...restUser },
+    process.env.REFRESH_SECRET_KEY,
+    { expiresIn: "1d" }
+  );
+
+  // let newRefreshTokenArray = !cookies?.refreshToken ? user.refreshToken : user.refreshToken.filter(token => token !== cookies.refreshToken)
+  let newRefreshTokenArray = [];
+  if (cookies?.refreshToken) {
+    const foundToken = await User.find({
+      refreshToken: cookies.refreshToken,
+    });
+
+    if (foundToken)
+      newRefreshTokenArray = user.refresh_token.filter(
+        (token) => token !== cookies.refreshToken
+      );
+    console.log(newRefreshTokenArray);
+  } else {
+    newRefreshTokenArray = user.refres_token || [];
+    console.log(newRefreshTokenArray);
+  }
+
+  res.clearCookie("refresh_token", {
+    httpOnly: true,
+    sameSite: "None",
+    secure: true,
+  });
+
+  user.refresh_token = [...newRefreshTokenArray, newRefreshToken];
+  await user.save();
+
+  res.cookie("refresh_token", newRefreshToken, {
+    httpOnly: true,
+    sameSite: "None",
+    secure: true,
+    expiresIn: 24 * 60 * 60 * 1000,
+  });
+  res
+    .status(202)
+    .json({ massage: "signed in successfully", access_token: accessToken });
+};
+
+export const userLogOut = async ({ cookies }, res) => {
+  if (!cookies.refresh_token) return res.sendStatus(204);
+
+  const user = await User.findOne({ refresh_token: cookies.refresh_token });
+  if (!user) {
+    res.clearCookie("refresh", {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    });
+    return res.sendStatus(204);
+  }
+
+  user.refresh_token = user.refresh_token.filter(
+    (token) => token !== cookies.refresh_token
+  );
+  await user.save();
+
+  res.clearCookie("refresh_token", {
+    httpOnly: true,
+    sameSite: "none",
+    secure: true,
+  });
+
+  res.sendStatus(204);
+};
+
+export const refreshTokenHandler = async ({ cookies }, res) => {
+  if (!cookies?.refresh_token) return res.sendStatus(401);
+  res.clearCookie("refresh_token", {
+    httpOnly: true,
+    sameSite: "None",
+    secure: true,
+  });
+
+  const user = await User.findOne({ refresh_token: cookies.refresh_token });
+  if (!user) {
+    jwt.verify(
+      cookies.refresh_token,
+      process.env.REFRESH_SECRET_KEY,
+      async (err, decoded) => {
+        if (err) return res.status(403).json({ err: err });
+        const hackedUser = await User.findOne(decoded);
+        hackedUser.refresh_token = [];
+        await hackedUser.save();
+      }
+    );
+    return res.sendStatus(403);
+  }
+
+  const newRefreshTokenArray = user.refresh_token.filter(
+    (token) => token !== cookies.refresh_token
+  );
+
+  jwt.verify(
+    cookies.refresh_token,
+    process.env.REFRESH_SECRET_KEY,
+    async (err, decoded) => {
+      if (err) {
+        user.refresh_token = [...newRefreshTokenArray];
+        await user.save();
+      }
+
+      console.log(decoded._doc.username);
+      if (user.username !== decoded._doc.username) {
+        return res.status(403).json({ err: err });
+      }
+
+      const accessToken = jwt.sign(decoded, process.env.ACCESS_SECRET_KEY);
+      const newRefreshToken = jwt.sign(decoded, process.env.REFRESH_SECRET_KEY);
+
+      user.refresh_token = [...newRefreshTokenArray, newRefreshToken];
+      await user.save();
+
+      res.cookie("jwt", newRefreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+        maxAge: 50000,
+      });
+
+      res.json({ accessToken: accessToken });
+    }
+  );
 };
