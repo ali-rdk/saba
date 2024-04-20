@@ -42,7 +42,7 @@ export const userUpdateSchema = yup.object({
     major: yup.string(),
     degree: yup.string().oneOf(["Bachelor", "Master", "PHD"]),
     gender: yup.string().oneOf(["Male", "Female"]),
-    age: yup.string().integer(),
+    age: yup.string(),
     province: yup.string(),
     city: yup.string(),
     postal_code: yup.string().min(10).max(10),

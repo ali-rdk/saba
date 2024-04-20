@@ -149,8 +149,6 @@ export const verifyCode = async (req, res) => {
   });
 
   if (!tokenCreated) {
-    tokenCreated.token = null;
-    await tokenCreated.save;
     return res.status(401).json({ token: "کد وارد شده نامعتبر است" });
   }
 
