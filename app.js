@@ -6,6 +6,7 @@ import { AuthRoutes } from "./routes/auth/index.mjs";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import { tableRoutes } from "./routes/index.mjs";
+import { generalRoutes } from "./routes/general/index.mjs";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Routing for API endpoints.
+app.use("/", generalRoutes);
 app.use("/auth", AuthRoutes);
 app.use("/table", tableRoutes);
 
