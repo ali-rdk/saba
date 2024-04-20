@@ -149,9 +149,8 @@ export const verifyCode = async (req, res) => {
   });
 
   if (!tokenCreated) {
-    tokenCreated.set({
-      token: null,
-    });
+    tokenCreated.token = null;
+    await tokenCreated.save;
     return res.status(401).json({ token: "کد وارد شده نامعتبر است" });
   }
 
@@ -293,13 +292,13 @@ export const refreshTokenHandler = async ({ cookies }, res) => {
       cookies.refresh_token,
       process.env.REFRESH_SECRET_KEY,
       async (err, decoded) => {
-        if (err) return res.status(403).json({ err: err });
+        if (err) return res.status(401).json({ err: err });
         const hackedUser = await User.findOne(decoded);
         hackedUser.refresh_token = [];
         await hackedUser.save();
       }
     );
-    return res.sendStatus(403);
+    return res.sendStatus(401);
   }
 
   const newRefreshTokenArray = user.refresh_token.filter(
@@ -317,7 +316,7 @@ export const refreshTokenHandler = async ({ cookies }, res) => {
 
       console.log(decoded._doc.username);
       if (user.username !== decoded._doc.username) {
-        return res.status(403).json({ err: err });
+        return res.status(401).json({ err: err });
       }
 
       const accessToken = jwt.sign(decoded, process.env.ACCESS_SECRET_KEY);
@@ -336,4 +335,63 @@ export const refreshTokenHandler = async ({ cookies }, res) => {
       res.json({ accessToken: accessToken });
     }
   );
+};
+
+export const resetPassword = async ({ body, user }, res) => {
+  const { current_password, new_password, repeat_new_password } = body;
+  if (new_password !== repeat_new_password) {
+    return res
+      .status(400)
+      .json({ repeat_password: "پسورد ورودی و تکرارش یکی نیست" });
+  }
+
+  const userExsits = await User.findOne({
+    national_id: user.national_id,
+  });
+
+  const passwordExists = await bcrypt.compare(
+    current_password,
+    userExsits.password
+  );
+
+  if (!userExsits || !passwordExists) {
+    return res
+      .status(404)
+      .json({ user: "رمز عبور کنونی شما در سیستم موجود نیست" });
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hashedNewPassword = await bcrypt.hash(new_password, salt);
+  3;
+
+  userExsits.password = hashedNewPassword;
+  await userExsits.save();
+
+  return res.json({ message: "رمز عبور شما با موفقیت تغییر یافت" });
+};
+
+export const updateFields = async ({ body, user }, res) => {
+  const wantedUser = await User.findOne({
+    national_id: user.national_id,
+  });
+
+  if (!wantedUser) {
+    return res.status(403).json({ user: "کاربر ثبت نشده است" });
+  }
+
+  // const keys = Object.keys(body);
+  // const userSchema = Object.keys(wantedUser._doc);
+  // console.log(keys, userSchema);
+  // if (!userSchema.includes(keys)) {
+  //   return res.status(400).json({ keys: "فیلد های مورد نظر موجود نمیباشد" });
+  // }
+
+  await User.findOneAndUpdate(
+    {
+      national_id: user.national_id,
+    },
+    body
+  );
+
+  return res.status(200).json({ message: "اطلاعات شما با موفقیت تغییر یافت" });
 };

@@ -2,7 +2,7 @@ import { User } from "../../models/index.mjs";
 
 export const tableData = async (req, res) => {
   const all_participants = await User.find({});
-  const data = all_participants.forEach((participant) => {
+  const data = all_participants.map((participant) => {
     return {
       first_name: participant.first_name,
       last_name: participant.last_name,

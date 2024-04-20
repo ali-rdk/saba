@@ -19,13 +19,39 @@ export const userRegistrationSchema = yup.object({
     major: yup.string().required(),
     degree: yup.string().oneOf(["Bachelor", "Master", "PHD"]).required(),
     gender: yup.string().oneOf(["Male", "Female"]).required(),
-    birth_date: yup.date().required(),
+    age: yup.number().integer().required(),
     province: yup.string().required(),
     city: yup.string().required(),
     postal_code: yup.string().required().min(10).max(10),
     confession: yup.bool().required(),
     reason: yup.string(),
     illness: yup.string(),
+    father_name: yup.string().required(),
+    residence: yup.string(),
+  }),
+});
+
+export const userUpdateSchema = yup.object({
+  body: yup.object({
+    first_name: yup.string(),
+    last_name: yup.string(),
+    email: yup.string().email("Invalid Email"),
+    password: yup.string(),
+    repeatPassword: yup.string(),
+    t_shirt: yup.string().oneOf(["S", "M", "L", "XL", "XXL", "XXXL"]),
+    university: yup.string(),
+    major: yup.string(),
+    degree: yup.string().oneOf(["Bachelor", "Master", "PHD"]),
+    gender: yup.string().oneOf(["Male", "Female"]),
+    age: yup.number().integer(),
+    province: yup.string(),
+    city: yup.string(),
+    postal_code: yup.string().min(10).max(10),
+    confession: yup.bool(),
+    reason: yup.string(),
+    illness: yup.string(),
+    father_name: yup.string(),
+    residence: yup.string(),
   }),
 });
 
@@ -45,6 +71,14 @@ export const loginSchema = yup.object({
   body: yup.object({
     nationalId: yup.string().max(10).min(8).required(),
     password: yup.string().required(),
+  }),
+});
+
+export const resetPasswordSchema = yup.object({
+  body: yup.object({
+    current_password: yup.string().required(),
+    new_password: yup.string().required(),
+    repeat_new_password: yup.string().required(),
   }),
 });
 
@@ -148,8 +182,8 @@ const UserSchema = new Schema({
   illness: {
     type: String,
   },
-  birth_date: {
-    type: Date,
+  age: {
+    type: Number,
     required: true,
   },
   gender: {
@@ -170,6 +204,11 @@ const UserSchema = new Schema({
     type: String,
     enum: [ROLES.ADMIN, ROLES.PARTICIPANT],
   },
+  father_name: {
+    type: String,
+    required: true,
+  },
+  residence: Boolean,
 });
 
 export const Address = model("address", AddressSchema);

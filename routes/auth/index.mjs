@@ -10,10 +10,14 @@ import {
   otpTokenSchema,
   loginSchema,
   ROLES,
+  resetPasswordSchema,
+  userUpdateSchema,
 } from "../../models/index.mjs";
 import {
   refreshTokenHandler,
+  resetPassword,
   sendOTP,
+  updateFields,
   userLogOut,
   userLogin,
   userRegister,
@@ -25,14 +29,14 @@ export const AuthRoutes = Router();
 
 AuthRoutes.post(
   "/signup",
-  hcaptcha.middleware.validate(process.env.CAPTCHA_SECRET),
+  // hcaptcha.middleware.validate(process.env.CAPTCHA_SECRET),
   SchemaValidator(userRegistrationSchema),
   userRegister
 );
 
 AuthRoutes.post(
   "/login",
-  hcaptcha.middleware.validate(process.env.CAPTCHA_SECRET),
+  // hcaptcha.middleware.validate(process.env.CAPTCHA_SECRET),
   SchemaValidator(loginSchema),
   userLogin
 );
@@ -47,3 +51,19 @@ AuthRoutes.get(
   userLogOut
 );
 AuthRoutes.get("/refresh", refreshTokenHandler);
+
+AuthRoutes.post(
+  "/password",
+  tokenValidator,
+  roleValidator(ROLES.PARTICIPANT),
+  SchemaValidator(resetPasswordSchema),
+  resetPassword
+);
+
+AuthRoutes.post(
+  "/update",
+  tokenValidator,
+  roleValidator(ROLES.PARTICIPANT),
+  SchemaValidator(userUpdateSchema),
+  updateFields
+);
