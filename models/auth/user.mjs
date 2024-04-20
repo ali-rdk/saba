@@ -27,6 +27,7 @@ export const userRegistrationSchema = yup.object({
     reason: yup.string(),
     illness: yup.string(),
     residence: yup.string(),
+    father_name: yup.string().required(),
   }),
 });
 
@@ -50,6 +51,7 @@ export const userUpdateSchema = yup.object({
     reason: yup.string(),
     illness: yup.string(),
     residence: yup.string(),
+    father_name: yup.string(),
   }),
 });
 
